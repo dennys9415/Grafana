@@ -1,0 +1,105 @@
+version: '3.9'
+
+services:
+
+#GRAFANA
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: ${GF_NAME}
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GF_ADMIN}
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_PASSWD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "${GF_PORT}:3000"
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+    restart: unless-stopped
+
+#PROMETHEUS
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ${PR_NAME}
+    ports:
+      - "${PR_PORT}:9090"
+    volumes:
+      - ./prometheus/config:/etc/prometheus
+      #- ./prometheus/data:/prometheus
+      - prodata:/prometheus
+    restart: unless-stopped
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      #- '--storage.tsdb.path=/prometheus'
+
+# NODE EXPORTER
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: ${ND_NAME}
+    command:
+      - '--path.rootfs=/host'
+    pid: host
+    restart: unless-stopped
+    #ports:
+    #  - "9100:9100"
+    volumes:
+      - '/:/host:ro,rslave'
+      
+volumes:
+  prodata: {}
+
+# PROMETHEUS (CADVISOR)
+#   cadvisor:
+#     container_name: monitoring-cadvisor
+#     devices:
+#       - /dev/kmsg
+#     expose:
+#       - 8080
+#     hostname: rpi-cadvisor
+#     image: zcube/cadvisor:latest
+#     ipc: shareable
+# #    networks:
+# #      - monitor_default
+#     privileged: true
+#     restart: unless-stopped
+#     security_opt:
+#       - label=disable
+#     volumes:
+#       - /:/rootfs:ro
+#       - /var/run:/var/run:ro
+#       - /sys:/sys:ro
+#       - /var/lib/docker/:/var/lib/docker:ro
+#       - /dev/disk/:/dev/disk:ro
+
+#C_ADVISOR
+  # cadvisor:
+  #   #image: google/cadvisor:latest
+  #   image: gcr.io/cadvisor/cadvisor:latest
+  #   privileged: true
+  #   container_name: cadvisor
+  #   #ports:
+  #   #   - "7000:8080"
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:ro
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker/:/var/lib/docker:ro
+  #     - /dev/disk/:/dev/disk:ro
+  #   devices:
+  #     - /dev/kmsg
+  #   restart: unless-stopped
+
+# NODE EXPORTER2
+#   node-exporter:
+#     image: prom/node-exporter:latest
+#     container_name: dennode
+#     # ports:
+#     #   - "9100:9100"
+#     #hostname: rpi-exporter
+#     restart: unless-stopped
+# #    networks:
+# #      - monitor_default
+
+#####
+#networks:
+#  monitor_default:
+#    external: true
